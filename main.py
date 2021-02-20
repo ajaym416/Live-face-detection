@@ -17,7 +17,7 @@ model.fc = torch.nn.Sequential(
         out_features=2
     ),
     nn.Sigmoid())
-model.load_state_dict(torch.load("resnet18_best_face.pth", map_location=torch.device('cpu')))
+model.load_state_dict(torch.load("resnet18_best_face2.pth", map_location=torch.device('cpu')))
 model.eval()
 
 eye_model = models.resnet18()
