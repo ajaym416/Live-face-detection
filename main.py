@@ -7,7 +7,7 @@ from torchvision import transforms
 import torch.nn as nn
 from PIL import Image
 import time
-
+import argparse
 best_up_to_now = "resnet18_best_face2.pth"
 model = models.resnet18()
 model.fc = torch.nn.Sequential(
@@ -17,7 +17,7 @@ model.fc = torch.nn.Sequential(
         out_features=2
     ),
     nn.Sigmoid())
-model.load_state_dict(torch.load("resnet18_best_face2.pth", map_location=torch.device('cpu')))
+model.load_state_dict(torch.load("resnet18_best_face.pth", map_location=torch.device('cpu')))
 model.eval()
 
 eye_model = models.resnet18()
@@ -111,10 +111,12 @@ class faceDetector():
             condition of eyes and draw it on frame
 
         """
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(self.video_source)
         #         cap = cv2.VideoCapture("WIN_20210219_13_06_36_Pro.mp4")
         number_of_frames = 0
         stride_runner = 0
+        if  self.video_source not in [0,1]:
+            self.stride = 4
         start_time = time.time()
         while True:
             ret, frame = cap.read()
@@ -133,11 +135,8 @@ class faceDetector():
                     left_eye_y = int(ld[0][1])
                     right_eye_x = int(ld[1][0])
                     right_eye_y = int(ld[1][1])
-                    left_eye = frame[int(left_eye_y - eye_length):int(left_eye_y + eye_length),
-                               int(left_eye_x - eye_length):int(left_eye_x + eye_length)]
-                    right_eye = frame[int(right_eye_y - eye_length):int(right_eye_y + eye_length),
-                                int(right_eye_x - eye_length):int(right_eye_x + eye_length)]
-                    #                   print([left_eye_y-eye_length,left_eye_y+eye_length , left_eye_x-eye_length,left_eye_x+eye_length])
+                    left_eye = frame[int(left_eye_y - eye_length):int(left_eye_y + eye_length),int(left_eye_x - eye_length):int(left_eye_x + eye_length)]
+                    right_eye = frame[int(right_eye_y - eye_length):int(right_eye_y + eye_length),int(right_eye_x - eye_length):int(right_eye_x + eye_length)]
                     # For the face
                     face = frame[startY:endY, startX:endX]
                     # run the classifier on bounding box
@@ -150,6 +149,22 @@ class faceDetector():
                         font_scale = 1
                     else:
                         font_scale = 0.5
+                    if pred_left_eye == "open_eye":
+                        cv2.putText(frame, "1", (left_eye_x, left_eye_y - 5), cv2.FONT_HERSHEY_SIMPLEX,
+                                    font_scale - 0.3, (0, 255, 0), 2, cv2.LINE_AA)
+                    else:
+                        cv2.putText(frame, "0", (left_eye_x, left_eye_y - 5), cv2.FONT_HERSHEY_SIMPLEX,
+                                    font_scale - 0.3, (0, 255, 0), 2, cv2.LINE_AA)
+                    if pred_right_eye == "open_eye":
+                        cv2.putText(frame, "1", (right_eye_x, right_eye_y - 5), cv2.FONT_HERSHEY_SIMPLEX,
+                                    font_scale - 0.3, (0, 255, 0), 2, cv2.LINE_AA)
+                    else:
+                        cv2.putText(frame, "0", (right_eye_x, right_eye_y - 5), cv2.FONT_HERSHEY_SIMPLEX,
+                                    font_scale - 0.3, (0, 255, 0), 2, cv2.LINE_AA)
+                    if (pred_left_eye == "closed_eye") and (pred_right_eye == "closed_eye"):
+                        cv2.putText(frame, "Eye_closed_non_live", (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 200), 2,
+                                    cv2.LINE_AA)
+                        continue
 
                     if pred == 'live_face':
                         """
@@ -166,23 +181,7 @@ class faceDetector():
                         cv2.putText(frame, str(round(float(prob_value), 4)), (endX, endY), cv2.FONT_HERSHEY_SIMPLEX,
                                     font_scale, (0, 0, 255), 2, cv2.LINE_AA)
 
-                    if pred_left_eye == "open_eye":
-                        cv2.putText(frame, "1", (left_eye_x, left_eye_y - 5), cv2.FONT_HERSHEY_SIMPLEX,
-                                    font_scale - 0.3, (0, 255, 0), 2, cv2.LINE_AA)
-                        eye_close_counter = 0
-                    else:
-                        cv2.putText(frame, "0", (left_eye_x, left_eye_y - 5), cv2.FONT_HERSHEY_SIMPLEX,
-                                    font_scale - 0.3, (0, 255, 0), 2, cv2.LINE_AA)
-                    if pred_right_eye == "open_eye":
-                        cv2.putText(frame, "1", (right_eye_x, right_eye_y - 5), cv2.FONT_HERSHEY_SIMPLEX,
-                                    font_scale - 0.3, (0, 255, 0), 2, cv2.LINE_AA)
-                        eye_close_counter = 0
-                    else:
-                        cv2.putText(frame, "0", (right_eye_x, right_eye_y - 5), cv2.FONT_HERSHEY_SIMPLEX,
-                                    font_scale - 0.3, (0, 255, 0), 2, cv2.LINE_AA)
-                    if (pred_left_eye == "closed_eye") and (pred_right_eye == "closed_eye"):
-                        cv2.putText(frame, "Eye_closed_non_live", (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 200), 2,
-                                    cv2.LINE_AA)
+
 
                 self._draw(frame, boxes, probs, landmarks, eye_lengths)
             except Exception as e:
@@ -205,7 +204,22 @@ class faceDetector():
         cap.release()
         cv2.destroyAllWindows()
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Treeleaf Liveness Detection')
+    parser.add_argument("-f", "--showFps", type=bool, default=False, choices=[True, False], help="Choose weather to show the average frame per second or not")
+    parser.add_argument("-v", "--videoSource", type=int, default=0, choices=[0, 1, 2], help="Choose the video source to start the liveness detection \
+    0: For the primary webcam \
+    1: For the secondary webcam \
+    2:To select the file from computer")
+    args = vars(parser.parse_args())
+    mtcnn = MTCNN()
+    showFps = True if args["showFps"] == True else False
+    videoSource = args["videoSource"]
+    if videoSource in [0,1]:
+        videoSource=videoSource
+    else:
+        print("SDFASDFASDGADGADSGASadsgadsGADWSGDASFASDGADSGASDFADSVDSFAWDGadsf")
+        videoSource = "demoVideo.mp4"
 
-mtcnn = MTCNN()
-fcd = faceDetector(mtcnn, classifier=model, eye_classifier=eye_model)
-fcd.run()
+    fcd = faceDetector(mtcnn, classifier=model, eye_classifier=eye_model, show_fps=showFps, video_source=videoSource)
+    fcd.run()
