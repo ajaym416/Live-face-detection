@@ -34,13 +34,14 @@ eye_model.eval()
 
 
 class faceDetector():
-    def __init__(self, mtcnn, classifier, eye_classifier, show_fps=False, stride=1, video_source=0):
+    def __init__(self, mtcnn, classifier, eye_classifier, show_fps=False, stride=1, video_source=0 , save_video=False):
         self.mtcnn = mtcnn
         self.stride = stride
         self.classifier = classifier
         self.eye_classifier = eye_classifier
         self.show_fps = show_fps
         self.video_source = video_source
+        self.save_video =save_video
 
     def _draw(self, frame, boxes, probs, landmarks, eye_lengths):
         """
@@ -116,7 +117,8 @@ class faceDetector():
         cap = cv2.VideoCapture(self.video_source)
         number_of_frames = 0
         stride_runner = 0
-
+        if not self.save_video:
+            out = cv2.VideoWriter("output.avi", cv2.VideoWriter_fourcc(*"MJPG"), 8, (640, 480))
         start_time = time.time()
         while True:
             ret, frame = cap.read()
@@ -128,6 +130,7 @@ class faceDetector():
                     frame = cv2.resize(frame, (640, 480))
                 else:
                     frame = cv2.resize(frame, (480, 640))
+
                 boxes, probs, landmarks = self.mtcnn.detect(frame, landmarks=True)
                 if boxes is None:
                     continue
@@ -201,11 +204,14 @@ class faceDetector():
 
             end_time = time.time()
             number_of_frames += 1
+            if end_time-start_time == 0:
+                raise Exception("Please select the valid video file")
             avg_frames = number_of_frames / (end_time - start_time)
             if self.show_fps:
                 cv2.putText(frame, f"fps:{round(avg_frames, 4)}", (0, 450), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2,
                             cv2.LINE_AA)
             cv2.putText(frame, "Press 'x' to exit", (-1, 470), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+            out.write(frame)
             cv2.imshow('Treeleaf AI Challenge 2020', frame)
 
             #             print(avg_frames)
@@ -225,11 +231,13 @@ if __name__ == '__main__':
     0: For the primary webcam \
     1: For the secondary webcam \
     2:To select the file from computer")
-    parser.add_argument("-p", "--videoPath", type=str, default="demoVideo/demoVideo2.mp4", help="path to the video ")
-    parser.add_argument("-s", "--stride" ,type=int, default=2, choices=[1, 2,3,4,5], help="Increase the FPS by striding")
+    parser.add_argument("-p", "--videoPath", type=str, default="demoVideo/demoVideo.avi", help="path to the video ")
+    parser.add_argument("-s", "--stride" ,type=int, default=2, choices=[1, 2, 3, 4, 5], help="Increase the FPS by striding")
+    parser.add_argument("-c", "--saveVideo" , type = bool , default=False, choices=[True, False] , help= "Set true to save the ouput video")
     args = vars(parser.parse_args())
     mtcnn = MTCNN()
     showFps = True if args["showFps"] == True else False
+    saveVideo = True if args["saveVideo"] == True else False
     videoSource = args["videoSource"]
     videoPath = args["videoPath"]
     stride = args["stride"]
