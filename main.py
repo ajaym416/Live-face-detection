@@ -8,7 +8,8 @@ import torch.nn as nn
 from PIL import Image
 import time
 import argparse
-best_up_to_now = "resnet18_best_face2.pth"
+
+best_up_to_now = "resnet18_best_face.pth"
 model = models.resnet18()
 model.fc = torch.nn.Sequential(
     nn.Dropout(0),
@@ -77,9 +78,9 @@ class faceDetector():
         #             print(out[0][0],out[0][1])
         prediction = np.array(pred[0])
         if prediction == 0:
-            return (out[0][0], "non_live")
+            return out[0][0], "non_live"
         else:
-            return (out[0][1], "live_face")
+            return out[0][1], "live_face"
 
     def _check_eye(self, eye):
         """
@@ -103,7 +104,7 @@ class faceDetector():
             return ("open_eye")
         elif prediction == 1:
             #             print("c")
-            return ("closed_eye")
+            return "closed_eye"
 
     def run(self):
         """
@@ -111,12 +112,11 @@ class faceDetector():
             condition of eyes and draw it on frame
 
         """
+
         cap = cv2.VideoCapture(self.video_source)
-        #         cap = cv2.VideoCapture("WIN_20210219_13_06_36_Pro.mp4")
         number_of_frames = 0
         stride_runner = 0
-        if  self.video_source not in [0,1]:
-            self.stride = 4
+
         start_time = time.time()
         while True:
             ret, frame = cap.read()
@@ -124,8 +124,13 @@ class faceDetector():
             stride_runner += 1
             # detect face box, probability and landmarks
             try:
-                frame = cv2.resize(frame, (640, 480))
+                if frame.shape[0] < frame.shape[1]:
+                    frame = cv2.resize(frame, (640, 480))
+                else:
+                    frame = cv2.resize(frame, (480, 640))
                 boxes, probs, landmarks = self.mtcnn.detect(frame, landmarks=True)
+                if boxes is None:
+                    continue
                 eye_lengths = []
                 for box, ld in zip(boxes, landmarks):
                     startX, startY, endX, endY = int(box[0]), int(box[1]), int(box[2]), int(box[3])
@@ -135,8 +140,10 @@ class faceDetector():
                     left_eye_y = int(ld[0][1])
                     right_eye_x = int(ld[1][0])
                     right_eye_y = int(ld[1][1])
-                    left_eye = frame[int(left_eye_y - eye_length):int(left_eye_y + eye_length),int(left_eye_x - eye_length):int(left_eye_x + eye_length)]
-                    right_eye = frame[int(right_eye_y - eye_length):int(right_eye_y + eye_length),int(right_eye_x - eye_length):int(right_eye_x + eye_length)]
+                    left_eye = frame[int(left_eye_y - eye_length):int(left_eye_y + eye_length),
+                               int(left_eye_x - eye_length):int(left_eye_x + eye_length)]
+                    right_eye = frame[int(right_eye_y - eye_length):int(right_eye_y + eye_length),
+                                int(right_eye_x - eye_length):int(right_eye_x + eye_length)]
                     # For the face
                     face = frame[startY:endY, startX:endX]
                     # run the classifier on bounding box
@@ -144,7 +151,7 @@ class faceDetector():
                         prob_value, pred = self._check_liveness(face)
                         pred_left_eye = self._check_eye(left_eye)
                         pred_right_eye = self._check_eye(right_eye)
-                    #                 print(pred)
+
                     if eye_length >= 15:
                         font_scale = 1
                     else:
@@ -176,12 +183,16 @@ class faceDetector():
                                     font_scale, (0, 255, 0), 2, cv2.LINE_AA)
 
                     else:
-                        cv2.putText(frame, "Non_live", (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, font_scale,
-                                    (0, 0, 255), 2, cv2.LINE_AA)
-                        cv2.putText(frame, str(round(float(prob_value), 4)), (endX, endY), cv2.FONT_HERSHEY_SIMPLEX,
-                                    font_scale, (0, 0, 255), 2, cv2.LINE_AA)
-
-
+                        if prob_value < 0.65:
+                            cv2.putText(frame, "Live_face", (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, font_scale,
+                                        (0, 255, 0), 2, cv2.LINE_AA)
+                            cv2.putText(frame, str(round(float(prob_value), 4)), (endX, endY), cv2.FONT_HERSHEY_SIMPLEX,
+                                        font_scale, (0, 255, 0), 2, cv2.LINE_AA)
+                        else:
+                            cv2.putText(frame, "Non_live", (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, font_scale,
+                                        (0, 0, 255), 2, cv2.LINE_AA)
+                            cv2.putText(frame, str(round(float(prob_value), 4)), (endX, endY), cv2.FONT_HERSHEY_SIMPLEX,
+                                        font_scale, (0, 0, 255), 2, cv2.LINE_AA)
 
                 self._draw(frame, boxes, probs, landmarks, eye_lengths)
             except Exception as e:
@@ -194,32 +205,38 @@ class faceDetector():
             if self.show_fps:
                 cv2.putText(frame, f"fps:{round(avg_frames, 4)}", (0, 450), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2,
                             cv2.LINE_AA)
+            cv2.putText(frame, "Press 'x' to exit", (-1, 470), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
             cv2.imshow('Treeleaf AI Challenge 2020', frame)
 
             #             print(avg_frames)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord('x'):
                 cap.release()
                 cv2.destroyAllWindows()
                 break
         cap.release()
         cv2.destroyAllWindows()
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Treeleaf Liveness Detection')
-    parser.add_argument("-f", "--showFps", type=bool, default=False, choices=[True, False], help="Choose weather to show the average frame per second or not")
+    parser.add_argument("-f", "--showFps", type=bool, default=False, choices=[True, False],
+                        help="Choose weather to show the average frame per second or not")
     parser.add_argument("-v", "--videoSource", type=int, default=0, choices=[0, 1, 2], help="Choose the video source to start the liveness detection \
     0: For the primary webcam \
     1: For the secondary webcam \
     2:To select the file from computer")
+    parser.add_argument("-p", "--videoPath", type=str, default="demoVideo/demoVideo2.mp4", help="path to the video ")
+    parser.add_argument("-s", "--stride" ,type=int, default=2, choices=[1, 2,3,4,5], help="Increase the FPS by striding")
     args = vars(parser.parse_args())
     mtcnn = MTCNN()
     showFps = True if args["showFps"] == True else False
     videoSource = args["videoSource"]
-    if videoSource in [0,1]:
-        videoSource=videoSource
+    videoPath = args["videoPath"]
+    stride = args["stride"]
+    if videoSource in [0, 1]:
+        videoSource = videoSource
     else:
-        print("SDFASDFASDGADGADSGASadsgadsGADWSGDASFASDGADSGASDFADSVDSFAWDGadsf")
-        videoSource = "demoVideo.mp4"
+        videoSource = videoPath
 
-    fcd = faceDetector(mtcnn, classifier=model, eye_classifier=eye_model, show_fps=showFps, video_source=videoSource)
+    fcd = faceDetector(mtcnn, classifier=model, eye_classifier=eye_model, show_fps=showFps,stride=stride, video_source=videoSource)
     fcd.run()
