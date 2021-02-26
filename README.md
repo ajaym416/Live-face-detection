@@ -15,8 +15,10 @@ required libraries . The required libraries are listed in the
 requirement.txt file. To install all the requirements you can simply
 type the following code in terminal of your IDE.
 
+'''
   Pip install -r requirements.txt
-  ---------------------------------
+'''
+---------------------------------
 
 For easier running of the model and proper evaluation I have written
 some use friendly command line interface. You can read the help file by
