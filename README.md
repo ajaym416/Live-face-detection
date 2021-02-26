@@ -1,7 +1,8 @@
 ***Treeleaf AI Challenge 2020***
 
 Liveness detection is a challenging task given the number of different
-scenarios live HD fake video, lightning conditions and deep fakes. This
+scenarios live HD fake video, lightning conditions,printed-photo attach,
+replay attack, and 3-D mask attack and deep fakes. This
 liveness detection uses the mtcnn to detect the face and then after
 extracting the face , it uses the same frame to classify whether the
 face is live or not. Further, the eyes are extracted from the face and
