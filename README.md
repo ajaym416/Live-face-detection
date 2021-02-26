@@ -121,6 +121,9 @@ still printed paper and quivering printed paper (A4 size) are used. For
 video replay attack, we display a face video on Lenovo LCD screen and
 Mac screen. For masking attack, masks with and without cropping are
 considered.
+<!--Images-->
+![sample_img](liveness.jpg)
+
 
 These videos are recorded from a total of 20 persons in MP4 format. The
 naming template of each mp4 is L\_S\_D\_x\_E\_p\_N (seven sections
