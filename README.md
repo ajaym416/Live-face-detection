@@ -15,59 +15,79 @@ required libraries . The required libraries are listed in the
 requirement.txt file. To install all the requirements you can simply
 type the following code in terminal of your IDE.
 
-'''
-  Pip install -r requirements.txt
-'''
+<!-- Github Markdown -->
+
+<!-- Code Blocks -->
+```bash
+    pip install -r requirements.txt 
+
+```
 ---------------------------------
 
 For easier running of the model and proper evaluation I have written
 some use friendly command line interface. You can read the help file by
 running:
 
-  python main.py -h
-  -------------------
+<!-- Github Markdown -->
 
-+--------------------------------------------------------------------------+
-| Treeleaf Liveness Detection\                                             |
-| \                                                                        |
-| optional arguments:\                                                     |
-| -h, --help show this help message and exit\                              |
-| -f {True,False}, --showFps {True,False}\                                 |
-| Choose weather to show the FPS or not\                                   |
-| -v {0,1,2}, --videoSource {0,1,2}\                                       |
-| Choose the video source to start the liveness detection                  |
-|                                                                          |
-| 0: For the primary webcam                                                |
-|                                                                          |
-| 1: For the secondary webcam                                              |
-|                                                                          |
-| 2:To select the file from computer\                                      |
-| -p VIDEOPATH, --videoPath                                                |
-|                                                                          |
-| VIDEOPATH path to the video// only works if the\                         |
-| -s {1,2,3,4,5}, --stride {1,2,3,4,5}\                                    |
-| Increase the FPS by striding\                                            |
-| -c {True,False}, --saveVideo {True,False}\                               |
-| Set true to save the output video                                        |
-+==========================================================================+
-|                                                                          |
-+--------------------------------------------------------------------------+
+<!-- Code Blocks -->
+```bash
+    python main.py -h
+
+```
+
+<!-- Code Blocks -->
+```bash
+Treeleaf Liveness Detection
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f {True,False}, --showFps {True,False}
+                        Choose weather to show the average frame per second or
+                        not
+  -v {0,1,2}, --videoSource {0,1,2}
+                        Choose the video source to start the liveness
+                        detection 
+                        0: For the primary webcam
+                        1: For the secondary webcam 
+                        2:To select the file from computer
+  -p VIDEOPATH, --videoPath VIDEOPATH
+                        path to the video
+  -s {1,2,3,4,5}, --stride {1,2,3,4,5}
+                        Increase the FPS by striding
+  -c {True,False}, --saveVideo {True,False}
+                        Set true to save the ouput video
+  -d {True,False}, --showAll {True,False}
+                        If False it only shows the images in which human faces
+                        are present and if True shows all the frames
+```
+                                
 
 All the arguments are optional so if you want to run the model through
 the webcam with the basic setting you can simply run
+<!-- Code Blocks -->
+```bash
+    python main.py
 
-  python main.py
-  ----------------
-
+```
 To show the fps you can run the main.py as
+<!-- Code Blocks -->
+```bash
+    python main.py -f True
 
-  python main.py -f True
-  ------------------------
+```
+  
 
-You can also use multiple settings from the given argument. Note that
-the **stride** argument used for increasing the fps may decrease the
-accuracy of bounding box.The algorithm used is a strided modification of
-MTCNN in which face detection is performed on only every N frames, and
+You can also use multiple settings from the given argument. For example
+<!-- Code Blocks -->
+```bash
+    python main.py -f True -v 0 -s 2 -d True
+
+```
+
+Note that the **stride** argument used for increasing the fps may decrease the
+accuracy of bounding box.The algorithm used is a strided modification 
+in which face detection is performed on only every N frames, and
 applied to all frames. For example, with a batch of 9 frames, we could
 pass frames 0, 3, and 6 to MTCNN. Then, the bounding boxes (and
 potentially landmarks) returned for frame 0 would be naively applied to
@@ -77,10 +97,11 @@ and 8.
 
 Also note that this model is made to freeze till the face is detected in
 the given video frame , as was instructed to ignore the non face object.
+you can set showAll to True to show all the frames
 
 Please choose the command line interface as per your need.
 
-For training the model different datasets are used. These datasets are
+For training the model, different datasets are used. These datasets are
 basically used to extract the face or eyes which is the subject of our
 interest. These datasets are publicly available for download. For ROSE-
 youtu dataset you have to send an email and they provide you the access
@@ -122,7 +143,7 @@ video replay attack, we display a face video on Lenovo LCD screen and
 Mac screen. For masking attack, masks with and without cropping are
 considered.
 <!--Images-->
-![sample_img](liveness.jpg)
+![liveness](liveness.png)
 
 
 These videos are recorded from a total of 20 persons in MP4 format. The
@@ -131,25 +152,25 @@ connected with ‘\_’). Each section is introduced as follows:
 
 1\. The first section ‘L’ could by any one of the follow 9 strings:
 
-1\) G - ‘G’ indicates a genuine person.
-
-2\) Ps - ‘Ps’ indicates a still printed paper.
-
-3\) Pq - ‘Pq’ indicates a quivering printed paper.
-
-4\) Vl - ‘Vl’ indicates a video which records a lenovo LCD display.
-
-5\) Vm - ‘Vm’ indicates a video which records a Mac LCD display.
-
-6\) Mc - ‘Mc’ indicates a paper mask with two eyes and mouth cropped out.
-
-7\) Mf - ‘Mf’ indicates a paper mask without cropping.
-
-8\) Mu - ‘Mu’ indicates a paper mask with the upper part cut in the
-middle.
-
-9\) Ml - ‘Ml’ indicates a paper mask with the lower part cut in the
-middle.
+> 1\) G - ‘G’ indicates a genuine person.
+>
+>2\) Ps - ‘Ps’ indicates a still printed paper.
+>
+>3\) Pq - ‘Pq’ indicates a quivering printed paper.
+>
+>4\) Vl - ‘Vl’ indicates a video which records a lenovo LCD display.
+>
+>5\) Vm - ‘Vm’ indicates a video which records a Mac LCD display.
+>
+>6\) Mc - ‘Mc’ indicates a paper mask with two eyes and mouth cropped out.
+>
+>7\) Mf - ‘Mf’ indicates a paper mask without cropping.
+>
+>8\) Mu - ‘Mu’ indicates a paper mask with the upper part cut in the
+>middle.
+>
+>9\) Ml - ‘Ml’ indicates a paper mask with the lower part cut in the
+>middle.
 
 2\. The second section ‘S’ could be any one of the follow 2 strings:
 
