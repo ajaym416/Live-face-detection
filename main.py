@@ -34,7 +34,7 @@ eye_model.eval()
 
 
 class faceDetector():
-    def __init__(self, mtcnn, classifier, eye_classifier, show_fps=False, stride=1, video_source=0 , save_video=False):
+    def __init__(self, mtcnn, classifier, eye_classifier, show_fps=False, stride=1, video_source=0 , save_video=False , show_all = False):
         self.mtcnn = mtcnn
         self.stride = stride
         self.classifier = classifier
@@ -42,6 +42,7 @@ class faceDetector():
         self.show_fps = show_fps
         self.video_source = video_source
         self.save_video =save_video
+        self.show_all =show_all
 
     def _draw(self, frame, boxes, probs, landmarks, eye_lengths):
         """
@@ -132,8 +133,9 @@ class faceDetector():
                     frame = cv2.resize(frame, (480, 640))
 
                 boxes, probs, landmarks = self.mtcnn.detect(frame, landmarks=True)
-                if boxes is None:
-                    continue
+                if not self.show_all:
+                    if boxes is None:
+                        continue
                 eye_lengths = []
                 for box, ld in zip(boxes, landmarks):
                     startX, startY, endX, endY = int(box[0]), int(box[1]), int(box[2]), int(box[3])
@@ -227,17 +229,32 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Treeleaf Liveness Detection')
     parser.add_argument("-f", "--showFps", type=bool, default=False, choices=[True, False],
                         help="Choose weather to show the average frame per second or not")
-    parser.add_argument("-v", "--videoSource", type=int, default=0, choices=[0, 1, 2], help="Choose the video source to start the liveness detection \
+    parser.add_argument("-v", "--videoSource", type=int, default=0, choices=[0, 1, 2],
+                        help="Choose the video source to start the liveness detection \
     0: For the primary webcam \
     1: For the secondary webcam \
     2:To select the file from computer")
     parser.add_argument("-p", "--videoPath", type=str, default="demoVideo/demoVideo.avi", help="path to the video ")
     parser.add_argument("-s", "--stride" ,type=int, default=2, choices=[1, 2, 3, 4, 5], help="Increase the FPS by striding")
     parser.add_argument("-c", "--saveVideo" , type = bool , default=False, choices=[True, False] , help= "Set true to save the ouput video")
+    parser.add_argument("-d", "--showAll" , type = bool , default=False, choices=[True, False] ,
+                        help= "If False it only shows the images in which human faces are present and if True shows all the frames")
+
     args = vars(parser.parse_args())
     mtcnn = MTCNN()
-    showFps = True if args["showFps"] == True else False
-    saveVideo = True if args["saveVideo"] == True else False
+    if args["showFps"]:
+        showFps = True
+    else:
+        showFps = False
+    if args["saveVideo"]:
+        saveVideo = True
+    else:
+        saveVideo = False
+    if args["showAll"]:
+        showAll = True
+    else:
+        showAll = False
+
     videoSource = args["videoSource"]
     videoPath = args["videoPath"]
     stride = args["stride"]
@@ -246,5 +263,5 @@ if __name__ == '__main__':
     else:
         videoSource = videoPath
 
-    fcd = faceDetector(mtcnn, classifier=model, eye_classifier=eye_model, show_fps=showFps,stride=stride, video_source=videoSource)
+    fcd = faceDetector(mtcnn, classifier=model, eye_classifier=eye_model, show_fps=showFps,stride=stride, video_source=videoSource , show_all =showAll )
     fcd.run()
