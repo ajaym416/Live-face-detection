@@ -10,7 +10,7 @@ are checked if the eyes are closed and as per the competition guidelines
 
 ***Running the model:***
 
-To run the model ,clone the code from the github. To install the
+To run the model ,clone the code from the github, install the
 required libraries . The required libraries are listed in the
 requirement.txt file. To install all the requirements you can simply
 type the following code in terminal of your IDE.
